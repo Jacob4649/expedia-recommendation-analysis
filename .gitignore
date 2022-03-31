@@ -1,4 +1,6 @@
-.Rproj.user
+# IGNORE NON CODE
+*.log
+*.pdf
+project-template_files/
 .Rhistory
-.RData
-.Ruserdata
+.Rproj.user/
