@@ -14,7 +14,6 @@ fontsize: 11pt
 urlcolor: blue
 ---
 
-
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(rpart)
@@ -29,7 +28,22 @@ expedia_data <- read_csv("ExpediaSearchData.csv")
 
 ## Introduction
 
-Include here a few sentences to introduce the problem and provide context. You might want to briefly summarize the data in words (what is the data and what is it used for). You can present the questions you are investigating here. 
+Expedia, a popular travel website, has gathered information on property searches
+on their platform between June $1^{st}$, 2021, and July $31^{st}, 2021$.
+
+This data includes information about recommendations the site offered to its
+customers, as well how they responded to these recommendations.
+
+The data has been used to examine: 
+
+- The feasibility of offering recommendations
+based on information about the composition of the group the consumer is
+travelling with. 
+
+- To examine whether offering a discounted price actually makes
+people more interested in a location. 
+
+- To examine how much use the recommendations actually get.
 
 ## Objectives
 
@@ -43,7 +57,7 @@ the same between price reduced and non-price reduced recommendations.
 - Determine a range of plausible values for the likelihood of a user clicking on
 a recommendation.
 
-## Data Summary
+## Data Wrangling
 
 - Each row was split into three new rows, one for each recommendation shown.
 Each row included observations on: 
@@ -98,9 +112,51 @@ recommendations <- recommendations %>% filter(!is.na(num_clicks) &
   !is.na(adult_count) & !is.na(is_drr) & !is.na(price_bucket))
 ```
 
-## Data Summary
+## Preliminary Analysis
 
-Include graphical displays that either motivated or address the questions.
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# determine how many searches resulted in click
+searches <- nrow(expedia_data)
+clicks <- expedia_data %>% filter(num_clicks1 > 0 | num_clicks2 > 0
+                                  | num_clicks3 > 0) %>% nrow()
+
+# determine how many price reduced searches resulted in click
+pr_searches <- recommendations %>% filter(is_drr == 1)
+pr_searches_total <- pr_searches %>% nrow()
+pr_searches_click <- pr_searches %>% filter(is_click) %>% nrow()
+
+# determine how many non-price-reduced searches resulted in click
+npr_searches <- recommendations %>% filter(is_drr == 1)
+npr_searches_total <- pr_searches %>% nrow()
+npr_searches_click <- pr_searches %>% filter(is_click) %>% nrow()
+```
+
+\center
+  *Table 1: Number Of Clicks On Recommendations*
+\center
+
+\begin{center}
+  \begin{tabular} {| c | c | c |}
+    \hline
+    & Searches & Resulted in Click \\
+    \hline
+    All & `r searches` & `r clicks` \\
+    \hline
+    Price-Reduced & `r pr_searches_total` & `r pr_searches_click` \\
+    \hline
+    Non-Price-Reduced & `r npr_searches_total` & `r npr_searches_click` \\
+    \hline
+  \end{tabular}
+\end{center}
+
+- *Table 1* suggests the number of recommendations clicked on and used by
+customers may not be that high---indicating that questioning the number of
+recommendations that are clicked may be an interesting idea.
+
+- The number of non-price-reduced recommendations resulting in clicks
+compared to the number of price-reduced recommendations resulting in clicks
+is also surprising, and suggests that asking whether the two happen equally
+often will yield interesting answers.
 
 # Statistical Methods
 
@@ -334,8 +390,8 @@ plot_data %>% ggplot(aes(x = Age, y = mean, fill = Age)) +
   *Buckets*
 \center
 
-- They all look pretty similar (*fig. 1*). There appears to be no relationship between
-group composition and price bucket.
+- They all look pretty similar (*fig. 1*). There appears to be no relationship 
+between group composition and price bucket.
 
 ## Price-Reduced And Non-Price-Reduced Listings Are Treated Differently
 
@@ -360,14 +416,14 @@ recommendations %>% mutate(reduced = is_drr == 1) %>% group_by(reduced) %>%
 ```
 
 \center
-  *Figure. 2: Probability of Clicking Different Recommendations*
+  *Figure 2: Probability of Clicking Different Recommendations*
   *In Real Data* 
 \center
 
-- In *figure. 2*, non-reduced listings were clicked almost 50% more than
+- In *figure 2*, non-reduced listings were clicked almost 50% more than
 price reduced ones. There is a clear difference in how often they are clicked.
 
-## Range For Probability of a Click
+## Clicks Aren't Likely
 
 - If the calculations to find the range of values the probability of a click 
 were repeated many times, 95% of the time the probability of a click would fall
@@ -392,15 +448,63 @@ recommendations %>% ggplot(aes(x = is_click)) + geom_bar(fill = "darkgreen") +
 ### Found Interval
 - 95% interval: **[`r lower_bound`, `r upper_bound`]**.
 
-- In the real data, `r clicked_formatted`% of recommendations were clicked.
+- In the real data, `r clicked_formatted`% of the first three
+recommendations were clicked.
 
 - This is within the found interval.
 
-## Conclusion
+## Conclusions
 
 Give your main conclusions here. Follow the order of questions you presented. 
 
-Here you can also mention any additional considerations, concerns, or issues you might have. For example, if the results were unexpected, you can discuss this and perhaps offer possible explanations.
+### Can't Try To Cater Prices To Group Composition
+- As *figure 1* showed, group compositions are similar regardless of the price
+of the location being booked.
+
+- Trying to adjust recommendations to show more expensive venues to customers
+without kids for instance, may not be effective, and I recommend against it.
+
+- This is surprising, one might expect older families that potentially
+have dual-incomes and had time to establish themselves to have more money 
+to spend on vacation. 
+
+- It is possible that solo travellers and childless couples are also able to 
+spend money on large accommodations, while the financial drain of children makes
+some families less able to spend, thus, evening the playing field.
+
+---
+
+### Discounted And Standard Price Locations Are Different
+
+- While they are different, *figure 2* shows it may not be in the expected way.
+
+- Evidence that the probabilities for clicking discounted and non-discounted
+recommendations are not the same was found. 
+
+- In the data, non-discounted recommendations are clicked almost 50% more often.
+
+- I would recommend Expedia present fewer discounted recommendations.
+
+- One reason for this surprising result, could be that people perceive
+discounted locations as 'cheap' and 'second rate'. They may be worried about the
+quality of locations that need to resort to discounts to attract customers.
+
+---
+
+### Recommendations Are Not Fully Utilized
+
+- Only a small fraction of the first three recommendations are clicked on (1 in
+16 at the high end, 1 in 25 on the low end).
+
+- Recommendations may not be very valuable to Expedia, if they are so rarely
+used.
+
+- If Expedia wishes to continue providing recommendations, I recommend
+Expedia invest immediately in further investigation into which factors make
+a 'good' (i.e. clickable, results in transaction) recommendation. 
+
+- It is clear that at the moment, recommendations do very little to help
+Expedia.
 
 ## References and Acknowledgements
 
