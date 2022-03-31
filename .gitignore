@@ -1,6 +1,7 @@
 # IGNORE NON CODE
 *.log
 *.pdf
+!project.pdf
 project-template_files/
 .Rhistory
 .Rproj.user/
