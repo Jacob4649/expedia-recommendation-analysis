@@ -16,6 +16,30 @@ expedia_data <- expedia_data %>% mutate(
   is_click3 = case_when(num_clicks3 > 0 ~ TRUE, TRUE ~ FALSE))
 ```
 
+Data Wrangling
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# extract first recommendation from each row
+first_rec <- expedia_data %>% 
+  select(infant_count, child_count, adult_count, price_bucket1, num_clicks1,
+         is_drr1) %>% rename(price_bucket = price_bucket1,
+                             num_clicks = num_clicks1, is_drr = is_drr1)
+
+# extract second recommendation from each row
+second_rec <- expedia_data %>% 
+  select(infant_count, child_count, adult_count, price_bucket2, num_clicks2,
+         is_drr2) %>% rename(price_bucket = price_bucket2,
+                             num_clicks = num_clicks2, is_drr = is_drr2)
+
+# extract third recommendation from each row
+third_rec <- expedia_data %>% 
+  select(infant_count, child_count, adult_count, price_bucket3, num_clicks3,
+         is_drr3) %>% rename(price_bucket = price_bucket3,
+                             num_clicks = num_clicks3, is_drr = is_drr3)
+
+# combine first, second, and third recommendations into single dataframe
+recommendations <- rbind(first_rec, second_rec, third_rec)
+```
+
 First classification tree
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # data wrangle into three dataframes with only first, second, or third 
@@ -188,6 +212,8 @@ bootstrap_distribution <- tibble(proportion = bootstrap_samples)
 confidence <- 0.95
 first_quantile <- (1 - confidence) / 2
 last_quantile <- 1 - first_quantile
+lower_bound = quantile(bootstrap_distribution$proportion, first_quantile)
+upper_bound = quantile(bootstrap_distribution$proportion, last_quantile)
 ```
 
 Visualize confidence interval

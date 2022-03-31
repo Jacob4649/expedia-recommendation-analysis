@@ -1,7 +1,7 @@
 ---
-title: "Your Project Title (be descriptive and creative!)"
-author: "Student name(s) and group number (or student number if working individually)"
-subtitle: "You can either put a subtitle here, or delete this line"
+title: "Customers - Opaque and Unexpected Decisions"
+author: "Jacob Klimczak - 1008203436"
+subtitle: "How surprising customer trends can lead to improved search recommendations"
 date: March 31, 2022
 output: 
   beamer_presentation:
@@ -16,15 +16,15 @@ urlcolor: blue
 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-# echo=FALSE will stop the code chunk from appearing in the knit document
-# warning=FALSE and message=FALSE will stop R messages from appearing in the knit document
 library(tidyverse)
+library(rpart)
+library(partykit)
 
-# here is the data for this project
+# set seed
+set.seed(314159265)
+
+# load data
 expedia_data <- read_csv("ExpediaSearchData.csv")
-
-# see the Project Overview page for more information: 
-# https://q.utoronto.ca/courses/235890/pages/project-overview
 ```
 
 
@@ -146,4 +146,358 @@ Here you can also mention any additional considerations, concerns, or issues you
 If you received any help from someone other than your group members you can acknowledge them. For example:   
 *The authors would like to thank "TA name" for their helpful suggestions and comments that improved the presentation of this poster.*
 
+# PROJECT STARTS HERE
 
+## Introduction
+
+## Objectives
+
+- Determine whether there is an association between the number of adults,
+children and infants in a group, and the price of the bookings they are
+interested in.
+
+- Determine whether the likelihood of a user clicking on a recommendation is
+the same between price reduced and non-price reduced recommendations.
+
+- Determine a range of plausible values for the likelihood of a user clicking on
+a recommendation.
+
+## Data Summary
+
+- Each row was split into three new rows, one for each recommendation shown.
+Each row included observations on: 
+  - The number of clicks (**num_clicks**)\
+  - The number of infants, children, and adults (**infant_count**, 
+  **child_count**, **adult_count**)\ 
+  - Whether the recommended listing was price reduced (**is_drr**)\
+  - The price bucket of the recommendation (**price_bucket**).
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# extract first recommendation from each row
+first_rec <- expedia_data %>% 
+  select(infant_count, child_count, adult_count, price_bucket1, num_clicks1,
+         is_drr1) %>% rename(price_bucket = price_bucket1,
+                             num_clicks = num_clicks1, is_drr = is_drr1)
+
+# extract second recommendation from each row
+second_rec <- expedia_data %>% 
+  select(infant_count, child_count, adult_count, price_bucket2, num_clicks2,
+         is_drr2) %>% rename(price_bucket = price_bucket2,
+                             num_clicks = num_clicks2, is_drr = is_drr2)
+
+# extract third recommendation from each row
+third_rec <- expedia_data %>% 
+  select(infant_count, child_count, adult_count, price_bucket3, num_clicks3,
+         is_drr3) %>% rename(price_bucket = price_bucket3,
+                             num_clicks = num_clicks3, is_drr = is_drr3)
+
+# combine first, second, and third recommendations into single dataframe
+recommendations <- rbind(first_rec, second_rec, third_rec)
+```
+
+\vspace{0.3cm}
+
+- A new variable called **is_click** was added to indicate whether a user
+clicked a recommendation. This variable was assigned a value of:
+  - *TRUE* when **num_clicks** was greater than 0\
+  - *FALSE* otherwise.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+recommendations <- recommendations %>% mutate(is_click =
+  case_when(num_clicks > 0 ~ TRUE, TRUE ~ FALSE))
+```
+
+\vspace{0.3cm}
+
+- All missing values (*NA*) were removed.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+recommendations <- recommendations %>% filter(!is.na(num_clicks) & 
+  !is.na(is_click) & !is.na(infant_count) & !is.na(child_count) &
+  !is.na(adult_count) & !is.na(is_drr) & !is.na(price_bucket))
+```
+
+## Data Summary
+
+Include graphical displays that either motivated or address the questions.
+
+# Statistical Methods
+
+## Can Price Be Predicted From Group Composition?
+
+- To see if the composition of a group, and the price of the recommendations
+they were interested in, were related, a *classification tree* was made. 
+
+- It made predictions on the *price bucket* groups clicked on were based on the 
+number people of different ages in the groups.
+
+### Classification Tree
+
+A system that makes predictions on the category inputs will fall in
+by looking at what categories previously entered inputs with similar
+characteristics fell in.
+
+### Price Bucket
+
+How expensive is the booking:
+
+1. Cheapest 20% of bookings
+
+2. Bottom 20%-40% of bookings
+
+3. Middle 40%-60% of bookings
+
+4. Upper 60%-80% of bookings
+
+5. Most expensive 80%-100% of bookings
+
+---
+
+- Recommendations that were not clicked on were ignored
+
+- 75% of clicked on recommendations were used to teach the tree what different
+priced bookings looked like relative to the composition of the group clicking on
+them.
+
+- The remaining 25% tested the tree to see how accurate it was. 
+
+- If the tree is making accurate predictions, there may be a relationship 
+between group composition and price, if not then it appears there may not be a 
+strong relationship.
+
+### Testing/Training Split Example
+\begin{center}
+  \begin{tabular} {c | c} 
+    \textcolor{blue}{Training} &  \textcolor{red}{Testing}
+  \end{tabular}
+  
+  \begin{tabular}{ | c | c | c | c | c | }
+    \hline
+    Row & Price Bucket & \# of Adults & \# of Children & \# of Infants \\
+    \hline
+    \textcolor{blue}{1} & \textcolor{blue}{5} & \textcolor{blue}{2} & 
+    \textcolor{blue}{0} & \textcolor{blue}{0} \\ 
+    \hline
+    \textcolor{blue}{2} & \textcolor{blue}{4} & \textcolor{blue}{2} & 
+    \textcolor{blue}{2} & \textcolor{blue}{1} \\
+    \hline
+    \textcolor{blue}{3} & \textcolor{blue}{4} & \textcolor{blue}{2} & 
+    \textcolor{blue}{2} & \textcolor{blue}{0} \\
+    \hline
+    \textcolor{red}{4} & \textcolor{red}{2} & \textcolor{red}{1} & 
+    \textcolor{red}{2} & \textcolor{red}{0} \\
+    \hline
+  \end{tabular}
+\end{center}
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# filter for recommendations that were clicked
+rec_counts <- recommendations %>% filter(is_click)
+
+# split into testing and training
+size <- nrow(rec_counts) # number of rows total
+proportion <- 0.75 # proportion of rows to use for training
+training_size <- round(proportion * size) # number of rows for training
+training_indices <- sample(1:size, size = training_size) # indices for training
+rec_counts <- rec_counts %>% rowid_to_column() # add row id
+
+# get training and testing datasets
+counts_train <- rec_counts %>% filter(rowid %in% training_indices)
+counts_test <- rec_counts %>% filter(!rowid %in% training_indices)
+
+# build fitted tree
+counts_tree <- rpart(
+  price_bucket ~ infant_count + child_count + adult_count, 
+  data = counts_train, method = "class", control = rpart.control(
+    cp = 0.01, minsplit = 3
+  )) # default trees don't even have terminal for each price_bucket
+
+# test tree
+counts_pred <- predict(counts_tree, counts_test, type = "class")
+
+# bundle into dataframe
+accuracy_tibble <- tibble(prediction = counts_pred, 
+                          actual = counts_test$price_bucket)
+
+# calculate accuracy
+accuracy <- accuracy_tibble %>%
+  summarize(accuracy = mean(prediction == actual)) %>%
+  as.numeric()
+```
+
+## Do Price-Reduced Clicks Differ From Standard Clicks?
+
+- 10 000 simulated scenarios assuming clients clicked on price-reduced
+recommendations and non-price-reduced recommendations at same rate were
+examined.
+
+- Reality was examined and compared to these simulated scenarios to determine
+whether price-reduced and non-price-reduced recommendations are clicked on at
+the same rate in real life.
+
+- If reality doesn't resemble many of the simulated scenarios, it's likely
+price-reduced and non-price-reduced recommendations are clicked on at different
+rates.
+
+### Simulated Scenario
+- Scenarios were simulated by taking existing data, and switching which
+recommendations were price-reduced.
+
+- Each simulation had similar characteristics to reality, and had the same
+number of price-reduced and non-price-reduced rows as reality.
+
+```{r, echo=FALSE, messages=FALSE, warning=FALSE}
+# calculate difference in likelihood of click for reduced and non-reduced
+sample_drr_diff <- recommendations %>% group_by(is_drr) %>%
+  summarize(probability = mean(is_click), .groups = "drop") %>%
+  summarize(difference = diff(probability)) %>%
+  as.numeric()
+
+# simulate for hypothesis test
+repetitions <- 10000
+simulated_values <- rep(NA, repetitions)
+
+for (i in 1:repetitions) {
+  sim_data <- recommendations %>% mutate(is_drr = sample(is_drr))
+  
+  sim_parameter <- sim_data %>% group_by(is_drr) %>%
+    summarize(probability = mean(is_click), .groups = "drop") %>%
+    summarize(difference = diff(probability)) %>%
+    as.numeric()
+  
+  simulated_values[i] <- sim_parameter
+}
+
+# calculate p value with simulated values
+drr_simulation <- tibble(difference = simulated_values)
+more_extreme_drr_diff <- drr_simulation %>% 
+  filter(abs(difference) >= abs(sample_drr_diff)) %>% nrow()
+
+drr_p_value <- more_extreme_drr_diff / repetitions
+```
+
+## Roughly How Frequently Are Recommendations Clicked On At Least Once?
+
+- This was examined by taking random groups out of the recommendations we have,
+and looking at how frequently recommendations are clicked in those random
+*subgroups*.
+
+- There is a relationship between the range of frequencies in the subgroups, and
+the range where the frequency of clicking recommendations is in real life.
+
+- The range where 95% of subgroups fell within was examined, and used to
+find a range the real frequency of clicking recommendations is likely inside.
+
+### Subgroup
+
+- Each *subgroup* has the same amount of items as the real group, but some items
+are repeated more than once.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# take bootstrap samples
+repetitions <- 10000
+bootstrap_samples <- rep(NA, repetitions)
+for (i in 1:repetitions) {
+  sample <- recommendations %>% sample_n(nrow(recommendations), replace = TRUE)
+  bootstrap_samples[i] <- sample %>% summarize(mean(is_click)) %>% as.numeric()
+}
+
+# create tibble
+bootstrap_distribution <- tibble(proportion = bootstrap_samples)
+
+# prepare to take confidence interval
+confidence <- 0.95
+first_quantile <- (1 - confidence) / 2
+last_quantile <- 1 - first_quantile
+lower_bound = quantile(bootstrap_distribution$proportion, first_quantile)
+upper_bound = quantile(bootstrap_distribution$proportion, last_quantile)
+```
+
+# Results
+
+Present the main results here, in order of importance, related to the questions asked. You might use tables or graphs, or other ways to summarize your results.
+
+## No Strong Relationship Between Group Composition And Booking Price
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# format accuracy for use below
+accuracy_formatted <- round(accuracy * 10000) / 100
+```
+
+- The *classification tree* only correctly identified price buckets
+`r accuracy_formatted`% of the time.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=2, fig.width=4, fig.align='center'}
+# manipulate data to prepare for bar plot
+adults <- recommendations %>% select(adult_count, price_bucket) %>%
+  mutate(Age = "Adult") %>% rename(count = adult_count)
+
+children <- recommendations %>% select(child_count, price_bucket) %>%
+  mutate(Age = "Child") %>% rename(count = child_count)
+
+infants <- recommendations %>% select(infant_count, price_bucket) %>%
+  mutate(Age = "Infant") %>% rename(count = infant_count)
+
+plot_data <- rbind(adults, children, infants) %>% 
+  group_by(price_bucket, Age) %>%
+  summarize(mean = mean(count))
+
+# show bar plot
+plot_data %>% ggplot(aes(x = Age, y = mean, fill = Age)) +
+  geom_bar(stat = "identity") + facet_wrap(~price_bucket) + 
+  labs(x = "Age of Group Member", 
+       y = "Mean Number in Group",
+  title = "Average Number of Each Age in Groups Clicking on
+       Different Price Buckets") +
+  theme(text = element_text(size = 8))
+```
+
+- They all look pretty similar. There appears to be no relationship between
+group composition and price bucket.
+
+## Price-Reduced And Non-Price-Reduced Listings Are Treated Differently
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+drr_p_value_formatted <- round(drr_p_value * 10000) / 100
+```
+
+- Of the 10 000 simulated scenarios, only `r drr_p_value_formatted`% or
+`r more_extreme_drr_diff` item were similar to the real life scenario.
+
+- This provides moderate evidence that the price-reduced and non-price-reduced
+listings are clicked on at different rates by customers.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=1.25, fig.width=4, fig.align='center'}
+# show bar plot of how common each is in sample
+recommendations %>% mutate(reduced = is_drr == 1) %>% group_by(reduced) %>%
+  summarize(probability = mean(is_click)) %>%
+  ggplot(aes(x = reduced, y = probability)) + geom_bar(stat = "identity",
+                                                      fill = "darkgreen") +
+  labs(x = "Price-Reduced", y = "Probability of Being Clicked",
+       title = "Probability of Clicking Price-Reduced and Non-Price-Reduced
+       Recommendations") + theme(text = element_text(size = 8))
+```
+
+- In the real data, non-reduced listings were clicked almost 33% more than
+price reduced ones. There is a clear difference in how often they are clicked.
+
+## Conclusion
+
+Give your main conclusions here. Follow the order of questions you presented. 
+
+Here you can also mention any additional considerations, concerns, or issues you might have. For example, if the results were unexpected, you can discuss this and perhaps offer possible explanations.
+
+## References and Acknowledgements
+
+*The author would like to thank Amin Banihashemi for his helpful comments*
+*and suggestions that immensely improved the visualizations in*
+*this presentation.*
+
+### References
+
+\begin{thebibliography}{1}
+\bibitem{dataset}
+Woznica, Adam and Krasnodebski, Jan (2021)
+\emph{Expedia Group RecTour Research Dataset}, 
+http://ceur-ws.org/Vol-2974/invited1.pdf.
+\end{thebibliography}
