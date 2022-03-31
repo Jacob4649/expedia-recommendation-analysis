@@ -27,128 +27,9 @@ set.seed(314159265)
 expedia_data <- read_csv("ExpediaSearchData.csv")
 ```
 
-
-## A heading that starts on a new page
-
-This document shows a few basics on making slides with R markdown.
-
-To produce the slides, Knit to PDF (Beamer).
-
-The examples shown were made with the `cars` dataset, which is NOT your project dataset.
-
----
-
-Three dashes starts a new page when it is not started by a new header. If you want to put a gap between parts of a slide `\vspace{0.3cm}` will do it. You can change the number inside the curly brackets to get a smaller or larger gap.
-
-\vspace{0.8cm}
-
-### This is a heading that doesn't start a new page but makes a nice emphasis box
-
-You can make text **bold** or in *italics*.
-
-To make bullet points, start the points after a blank line:
- 
-- point one\
-- another point (you need to do a double space or a backslash to start a new line)
-
-## Markdown has nice formatting options for you
-
-1. Check out the cheat sheet [https://github.com/rstudio/cheatsheets/raw/master/rmarkdown-2.0.pdf](https://github.com/rstudio/cheatsheets/raw/master/rmarkdown-2.0.pdf)
-    i) Oh look! A sub-item in the list (note two 'tabs' before this line)
-2. You can get help making tables here: [https://www.tablesgenerator.com/markdown_tables#](https://www.tablesgenerator.com/markdown_tables#)
-
-| A column header | Another column header                |
-|-----------------|--------------------------------------|
-| First row       | First row, but now the second column |
-
----
-
-## You can also use LaTeX commands 
-
-Examples include:
-
-- changing text colour, e.g.,  Roses are \textcolor{red}{red}, violets are \textcolor{blue}{blue}\
-- writing equations and mathematical symbols, both inline and not inline e.g., the equation of a line and subscripts like H_0 to $H_0$\
-
----
-
-If you include an image _not_ created in R, you MUST make sure that you provide the file with your upload. You will lose reproducibility marks if we can't recreate your report and this includes external images. The scale command changes the size.
-
-\begin{center}
-\includegraphics[width=7.5cm, height=4.5cm]{images/example-image.jpeg}
-\end{center}
-
-Photo by [Adi Goldstein]("https://unsplash.com/@adigold1?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText) on [Unsplash]("https://unsplash.com/s/photos/code?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText")
-  
-
----
-
-Include some R output
-
-```{r, fig.height=4}
-# I've set the fig.height to 4 so it fits on the slide
-ggplot(cars, aes(x=speed, y=dist)) + 
-  geom_point() +
-  theme_minimal()
-```
-
----
-
-Include the output without showing the code and R messages (which is what you want for your final submission).  This R code chunk also changes the size of the plot: `fig.height=3, fig.width=4` and it's position: `fig.align='center'`.
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=2, fig.width=4, fig.align='center'}
-ggplot(cars, aes(x=speed, y=dist)) + 
-  geom_point() +
-  theme_minimal()
-```
-
-This plot shows that there is a positive relationship between distance and speed.
-
-## Read more
-
-For more on creating an `beamer` presentation see [https://bookdown.org/yihui/rmarkdown/beamer-presentation.html](https://bookdown.org/yihui/rmarkdown/beamer-presentation.html)
-
-You can change the style, colours and fonts in your presentation by picking from a library of available themes. Once you find ones you like, you change the settings in the YAML section at the top of this RMarkdown document.
-[http://deic.uab.es/~iblanes/beamer_gallery/index.html](http://deic.uab.es/~iblanes/beamer_gallery/index.html) 
-
-
-# Headings you should include in your project
-
 ## Introduction
 
 Include here a few sentences to introduce the problem and provide context. You might want to briefly summarize the data in words (what is the data and what is it used for). You can present the questions you are investigating here. 
-
-## Objectives (optional)
-
-You can list the questions of interest in complete English sentences here to highlight them. 
-
-## Data Summary (optional)
-
-Here you can explain how you cleaned the data and created variables suitable for answering your questions. 
-You can also include graphical displays that either motivated or address the questions.
-
-## Statistical Methods
-
-Describe here what you have done to the data without presenting any results (output). If you want to indicate variables by symbols or variable names, define them here. 
-
-## Results
-
-Present the main results here, in order of importance, related to the questions asked. You might use tables or graphs, or other ways to summarize your results.
-
-## Conclusion
-
-Give your main conclusions here. Follow the order of questions you presented. 
-
-Here you can also mention any additional considerations, concerns, or issues you might have. For example, if the results were unexpected, you can discuss this and perhaps offer possible explanations.
-
-## References and Acknowledgements (optional)
-
-If you received any help from someone other than your group members you can acknowledge them. For example:   
-*The authors would like to thank "TA name" for their helpful suggestions and comments that improved the presentation of this poster.*
-
-# PROJECT STARTS HERE
-
-## Introduction
 
 ## Objectives
 
@@ -259,13 +140,13 @@ How expensive is the booking:
 priced bookings looked like relative to the composition of the group clicking on
 them.
 
-- The remaining 25% tested the tree to see how accurate it was. 
+- The remaining 25% tested the tree to see how accurate it was. (See *table 1*)
 
 - If the tree is making accurate predictions, there may be a relationship 
 between group composition and price, if not then it appears there may not be a 
 strong relationship.
 
-### Testing/Training Split Example
+### *Table 1: Testing/Training Split Example*
 \begin{center}
   \begin{tabular} {c | c} 
     \textcolor{blue}{Training} &  \textcolor{red}{Testing}
@@ -415,8 +296,6 @@ upper_bound = quantile(bootstrap_distribution$proportion, last_quantile)
 
 # Results
 
-Present the main results here, in order of importance, related to the questions asked. You might use tables or graphs, or other ways to summarize your results.
-
 ## No Strong Relationship Between Group Composition And Booking Price
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -427,7 +306,7 @@ accuracy_formatted <- round(accuracy * 10000) / 100
 - The *classification tree* only correctly identified price buckets
 `r accuracy_formatted`% of the time.
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=2, fig.width=4, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=1.75, fig.width=4, fig.align='center'}
 # manipulate data to prepare for bar plot
 adults <- recommendations %>% select(adult_count, price_bucket) %>%
   mutate(Age = "Adult") %>% rename(count = adult_count)
@@ -446,13 +325,16 @@ plot_data <- rbind(adults, children, infants) %>%
 plot_data %>% ggplot(aes(x = Age, y = mean, fill = Age)) +
   geom_bar(stat = "identity") + facet_wrap(~price_bucket) + 
   labs(x = "Age of Group Member", 
-       y = "Mean Number in Group",
-  title = "Average Number of Each Age in Groups Clicking on
-       Different Price Buckets") +
-  theme(text = element_text(size = 8))
+       y = "Mean Number in Group") +
+  theme(text = element_text(size = 7))
 ```
 
-- They all look pretty similar. There appears to be no relationship between
+\center
+  *Figure 1: Average Number of Each Age in Groups Clicking on Different Price*
+  *Buckets*
+\center
+
+- They all look pretty similar (*fig. 1*). There appears to be no relationship between
 group composition and price bucket.
 
 ## Price-Reduced And Non-Price-Reduced Listings Are Treated Differently
@@ -473,13 +355,46 @@ recommendations %>% mutate(reduced = is_drr == 1) %>% group_by(reduced) %>%
   summarize(probability = mean(is_click)) %>%
   ggplot(aes(x = reduced, y = probability)) + geom_bar(stat = "identity",
                                                       fill = "darkgreen") +
-  labs(x = "Price-Reduced", y = "Probability of Being Clicked",
-       title = "Probability of Clicking Price-Reduced and Non-Price-Reduced
-       Recommendations") + theme(text = element_text(size = 8))
+  labs(x = "Price-Reduced", y = "Probability of Click") +
+  theme(text = element_text(size = 7))
 ```
 
-- In the real data, non-reduced listings were clicked almost 33% more than
+\center
+  *Figure. 2: Probability of Clicking Different Recommendations*
+  *In Real Data* 
+\center
+
+- In *figure. 2*, non-reduced listings were clicked almost 50% more than
 price reduced ones. There is a clear difference in how often they are clicked.
+
+## Range For Probability of a Click
+
+- If the calculations to find the range of values the probability of a click 
+were repeated many times, 95% of the time the probability of a click would fall
+within the range.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=5, fig.height=0.75}
+# get number clicked and not clicked
+clicked <- recommendations %>% filter(is_click) %>% nrow()
+clicked_frac <- clicked / nrow(recommendations)
+clicked_formatted <- round(clicked_frac * 10000) / 100
+
+
+# plot probability in sample
+recommendations %>% ggplot(aes(x = is_click)) + geom_bar(fill = "darkgreen") +
+  labs(x = "Clicked", y = "Count") + theme(text = element_text(size = 7))
+```
+
+\center
+  *Figure 3: Number of Recommendations Clicked*
+\center
+
+### Found Interval
+- 95% interval: **[`r lower_bound`, `r upper_bound`]**.
+
+- In the real data, `r clicked_formatted`% of recommendations were clicked.
+
+- This is within the found interval.
 
 ## Conclusion
 
