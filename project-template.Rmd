@@ -28,7 +28,7 @@ expedia_data <- read_csv("ExpediaSearchData.csv")
 
 ## Introduction
 
-Expedia, a popular travel website, has gathered information on property searches
+Expedia, a popular travel website, has gathered information on searches
 on their platform between June $1^{st}$, 2021, and July $31^{st}, 2021$.
 
 This data includes information about recommendations the site offered to its
@@ -40,10 +40,10 @@ The data has been used to examine:
 based on information about the composition of the group the consumer is
 travelling with. 
 
-- To examine whether offering a discounted price actually makes
+- Whether offering a discounted price actually makes
 people more interested in a location. 
 
-- To examine how much use the recommendations actually get.
+- How much use the recommendations actually get.
 
 ## Objectives
 
@@ -52,7 +52,7 @@ children and infants in a group, and the price of the bookings they are
 interested in.
 
 - Determine whether the likelihood of a user clicking on a recommendation is
-the same between price reduced and non-price reduced recommendations.
+the same between price-reduced and non-price-reduced recommendations.
 
 - Determine a range of plausible values for the likelihood of a user clicking on
 a recommendation.
@@ -64,7 +64,7 @@ Each row included observations on:
   - The number of clicks (**num_clicks**)\
   - The number of infants, children, and adults (**infant_count**, 
   **child_count**, **adult_count**)\ 
-  - Whether the recommended listing was price reduced (**is_drr**)\
+  - Whether the recommended listing was price-reduced (**is_drr**)\
   - The price bucket of the recommendation (**price_bucket**).
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -126,9 +126,9 @@ pr_searches_total <- pr_searches %>% nrow()
 pr_searches_click <- pr_searches %>% filter(is_click) %>% nrow()
 
 # determine how many non-price-reduced searches resulted in click
-npr_searches <- recommendations %>% filter(is_drr == 1)
-npr_searches_total <- pr_searches %>% nrow()
-npr_searches_click <- pr_searches %>% filter(is_click) %>% nrow()
+npr_searches <- recommendations %>% filter(is_drr == 0)
+npr_searches_total <- npr_searches %>% nrow()
+npr_searches_click <- npr_searches %>% filter(is_click) %>% nrow()
 ```
 
 \center
@@ -136,15 +136,11 @@ npr_searches_click <- pr_searches %>% filter(is_click) %>% nrow()
 \center
 
 \begin{center}
-  \begin{tabular} {| c | c | c |}
+  \begin{tabular} {| c | c |}
     \hline
-    & Searches & Resulted in Click \\
+    Searches & Resulted in Click \\
     \hline
-    All & `r searches` & `r clicks` \\
-    \hline
-    Price-Reduced & `r pr_searches_total` & `r pr_searches_click` \\
-    \hline
-    Non-Price-Reduced & `r npr_searches_total` & `r npr_searches_click` \\
+    `r searches` & `r clicks` \\
     \hline
   \end{tabular}
 \end{center}
@@ -153,10 +149,28 @@ npr_searches_click <- pr_searches %>% filter(is_click) %>% nrow()
 customers may not be that high---indicating that questioning the number of
 recommendations that are clicked may be an interesting idea.
 
-- The number of non-price-reduced recommendations resulting in clicks
-compared to the number of price-reduced recommendations resulting in clicks
-is also surprising, and suggests that asking whether the two happen equally
-often will yield interesting answers.
+\center
+  *Table 2: Number Of Recommendations Clicked On*
+\center
+
+\begin{center}
+  \begin{tabular} {| c | c | c |}
+    \hline
+    & Recommendations & Clicks \\
+    \hline
+    Price-Reduced & `r pr_searches_total` & `r pr_searches_click` \\
+    \hline
+    Non-Price-Reduced & `r npr_searches_total` & `r npr_searches_click` \\
+    \hline
+  \end{tabular}
+\end{center}
+
+
+- *Table 2* shows that the number of non-price-reduced locations getting clicks
+is proportionately higher than the number of discounted ones getting clicks.
+
+- This encourages statistical analysis of how the two groups perform relative to
+each other.
 
 # Statistical Methods
 
@@ -196,13 +210,13 @@ How expensive is the booking:
 priced bookings looked like relative to the composition of the group clicking on
 them.
 
-- The remaining 25% tested the tree to see how accurate it was. (See *table 1*)
+- The remaining 25% tested the tree to see how accurate it was. (See *table 3*)
 
 - If the tree is making accurate predictions, there may be a relationship 
 between group composition and price, if not then it appears there may not be a 
 strong relationship.
 
-### *Table 1: Testing/Training Split Example*
+### *Table 3: Testing/Training Split Example*
 \begin{center}
   \begin{tabular} {c | c} 
     \textcolor{blue}{Training} &  \textcolor{red}{Testing}
@@ -405,7 +419,7 @@ drr_p_value_formatted <- round(drr_p_value * 10000) / 100
 - This provides moderate evidence that the price-reduced and non-price-reduced
 listings are clicked on at different rates by customers.
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=1.25, fig.width=4, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=1, fig.width=4, fig.align='center'}
 # show bar plot of how common each is in sample
 recommendations %>% mutate(reduced = is_drr == 1) %>% group_by(reduced) %>%
   summarize(probability = mean(is_click)) %>%
@@ -421,7 +435,7 @@ recommendations %>% mutate(reduced = is_drr == 1) %>% group_by(reduced) %>%
 \center
 
 - In *figure 2*, non-reduced listings were clicked almost 50% more than
-price reduced ones. There is a clear difference in how often they are clicked.
+reduced ones. There is a clear difference in how often they are clicked.
 
 ## Clicks Aren't Likely
 
@@ -453,16 +467,11 @@ recommendations were clicked.
 
 - This is within the found interval.
 
-## Conclusions
+# Conclusions
 
-Give your main conclusions here. Follow the order of questions you presented. 
-
-### Can't Try To Cater Prices To Group Composition
+## Can't Try To Cater Prices To Group Composition
 - As *figure 1* showed, group compositions are similar regardless of the price
 of the location being booked.
-
-- Trying to adjust recommendations to show more expensive venues to customers
-without kids for instance, may not be effective, and I recommend against it.
 
 - This is surprising, one might expect older families that potentially
 have dual-incomes and had time to establish themselves to have more money 
@@ -472,9 +481,12 @@ to spend on vacation.
 spend money on large accommodations, while the financial drain of children makes
 some families less able to spend, thus, evening the playing field.
 
----
+### Main Takeaway
 
-### Discounted And Standard Price Locations Are Different
+- Trying to adjust recommendations to show more expensive venues to customers
+without kids for instance, may not be effective, and I recommend against it.
+
+## Discounted And Standard Price Locations Are Different
 
 - While they are different, *figure 2* shows it may not be in the expected way.
 
@@ -483,15 +495,15 @@ recommendations are not the same was found.
 
 - In the data, non-discounted recommendations are clicked almost 50% more often.
 
-- I would recommend Expedia present fewer discounted recommendations.
-
 - One reason for this surprising result, could be that people perceive
 discounted locations as 'cheap' and 'second rate'. They may be worried about the
 quality of locations that need to resort to discounts to attract customers.
 
----
+### Main Takeaway
 
-### Recommendations Are Not Fully Utilized
+- I would recommend Expedia present fewer discounted recommendations.
+
+## Recommendations Are Not Fully Utilized
 
 - Only a small fraction of the first three recommendations are clicked on (1 in
 16 at the high end, 1 in 25 on the low end).
@@ -499,12 +511,14 @@ quality of locations that need to resort to discounts to attract customers.
 - Recommendations may not be very valuable to Expedia, if they are so rarely
 used.
 
+- It is clear that at the moment, recommendations do very little to help
+Expedia.
+
+### Main Takeaway
+
 - If Expedia wishes to continue providing recommendations, I recommend
 Expedia invest immediately in further investigation into which factors make
 a 'good' (i.e. clickable, results in transaction) recommendation. 
-
-- It is clear that at the moment, recommendations do very little to help
-Expedia.
 
 ## References and Acknowledgements
 
