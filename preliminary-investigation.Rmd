@@ -1,0 +1,200 @@
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rpart)
+library(partykit)
+
+# set seed
+set.seed(314159265)
+
+# load data
+expedia_data <- read_csv("ExpediaSearchData.csv")
+
+# add column for whether clicked (all analyses use this)
+expedia_data <- expedia_data %>% mutate(
+  is_click1 = case_when(num_clicks1 > 0 ~ TRUE, TRUE ~ FALSE), 
+  is_click2 = case_when(num_clicks2 > 0 ~ TRUE, TRUE ~ FALSE),
+  is_click3 = case_when(num_clicks3 > 0 ~ TRUE, TRUE ~ FALSE))
+```
+
+First classification tree
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# data wrangle into three dataframes with only first, second, or third 
+# recommendation
+
+first_rec_counts <- expedia_data %>% filter(is_click1) %>%
+  select(price_bucket1, infant_count, child_count, adult_count) %>%
+  rename(price_bucket = price_bucket1)
+
+second_rec_counts <- expedia_data %>% filter(is_click2) %>%
+  select(price_bucket2, infant_count, child_count, adult_count) %>%
+  rename(price_bucket = price_bucket2)
+
+third_rec_counts <- expedia_data %>% filter(is_click3) %>%
+  select(price_bucket3, infant_count, child_count, adult_count) %>%
+  rename(price_bucket = price_bucket3)
+
+# combine into single dataframe and filters out NA
+rec_counts <- rbind(first_rec_counts, second_rec_counts, third_rec_counts) %>% 
+  filter(!is.na(price_bucket) & !is.na(infant_count)
+         & !is.na(child_count) & !is.na(adult_count))
+
+# split into testing and training
+size <- nrow(rec_counts) # number of rows total
+proportion <- 0.75 # proportion of rows to use for training
+training_size <- round(proportion * size) # number of rows for training
+training_indices <- sample(1:size, size = training_size) # indices for training
+rec_counts <- rec_counts %>% rowid_to_column() # add row id
+
+# get training and testing datasets
+counts_train <- rec_counts %>% filter(rowid %in% training_indices)
+counts_test <- rec_counts %>% filter(!rowid %in% training_indices)
+
+# build fitted tree
+counts_tree <- rpart(
+  price_bucket ~ infant_count + child_count + adult_count, 
+  data = counts_train, method = "class", control = rpart.control(
+    cp = 0.01, minsplit = 3
+  )) # default trees don't even have terminal for each price_bucket
+
+# test tree
+counts_pred <- predict(counts_tree, counts_test, type = "class")
+
+# bundle into dataframe
+accuracy_tibble <- tibble(prediction = counts_pred, 
+                          actual = counts_test$price_bucket)
+```
+
+Visualize tree and table
+```{r echo=FALSE}
+# visualize tree
+plot(as.party(counts_tree), type="simple")
+
+# show confusion matrix
+table(accuracy_tibble$prediction, accuracy_tibble$actual)
+
+# calculate accuracy
+accuracy_tibble %>% summarize(accuracy = mean(prediction == actual))
+
+# manipulate data to prepare for bar plot
+adults <- rec_counts %>% select(adult_count, price_bucket) %>%
+  mutate(age = "adult") %>% rename(count = adult_count)
+
+children <- rec_counts %>% select(child_count, price_bucket) %>%
+  mutate(age = "child") %>% rename(count = child_count)
+
+infants <- rec_counts %>% select(infant_count, price_bucket) %>%
+  mutate(age = "infant") %>% rename(count = infant_count)
+
+plot_data <- rbind(adults, children, infants) %>% 
+  group_by(price_bucket, age) %>%
+  summarize(mean = mean(count))
+
+# show bar plot
+plot_data %>% ggplot(aes(x = age, y = mean)) +
+  geom_bar(stat = "identity") + facet_wrap(~price_bucket)
+```
+
+Second parameter comparison
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# data wrangle into three dataframes with only first, second, or third 
+# recommendation
+
+first_rec_drr <- expedia_data %>%
+  select(is_drr1, is_click1) %>%
+  rename(is_drr = is_drr1, is_click = is_click1)
+
+second_rec_drr <- expedia_data %>%
+  select(is_drr2, is_click2) %>%
+  rename(is_drr = is_drr2, is_click = is_click2)
+
+third_rec_drr <- expedia_data %>%
+  select(is_drr3, is_click3) %>%
+  rename(is_drr = is_drr3, is_click = is_click3)
+
+# combine into single dataframe and filter out NA
+rec_drr <- rbind(first_rec_drr, second_rec_drr, third_rec_drr) %>%
+  filter(!is.na(is_click) & !is.na(is_drr))
+
+# calculate difference in likelihood of click for reduced and non-reduced
+sample_drr_diff <- rec_drr %>% group_by(is_drr) %>%
+  summarize(probability = mean(is_click), .groups = "drop") %>%
+  summarize(difference = diff(probability)) %>%
+  as.numeric()
+
+# simulate for hypothesis test
+repetitions <- 10000
+simulated_values <- rep(NA, repetitions)
+
+for (i in 1:repetitions) {
+  sim_data <- rec_drr %>% mutate(is_drr = sample(is_drr))
+  
+  sim_parameter <- sim_data %>% group_by(is_drr) %>%
+    summarize(probability = mean(is_click), .groups = "drop") %>%
+    summarize(difference = diff(probability)) %>%
+    as.numeric()
+  
+  simulated_values[i] <- sim_parameter
+}
+
+# calculate p value with simulated values
+drr_simulation <- tibble(difference = simulated_values)
+more_extreme_drr_diff <- drr_simulation %>% 
+  filter(abs(difference) >= abs(sample_drr_diff)) %>% nrow()
+
+drr_p_value <- more_extreme_drr_diff / repetitions
+```
+
+Visualize sample difference
+```{r, echo=FALSE}
+# show bar plot of how common each is in sample
+rec_drr %>% group_by(is_drr) %>%
+  summarize(probability = mean(is_click)) %>%
+  ggplot(aes(x = is_drr, y = probability)) + geom_bar(stat = "identity")
+```
+
+Third plausible values
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# data wrangle into three dataframes with only first, second, or third 
+# recommendation
+
+first_rec_prob <- expedia_data %>%
+  select(is_click1) %>%
+  rename(is_click = is_click1)
+
+second_rec_prob <- expedia_data %>%
+  select(is_click2) %>%
+  rename(is_click = is_click2)
+
+third_rec_prob <- expedia_data %>%
+  select(is_click3) %>%
+  rename(is_click = is_click3)
+
+# combine into single dataframe and filter out NA
+rec_prob <- rbind(first_rec_prob, second_rec_prob, third_rec_prob) %>%
+  filter(!is.na(is_click))
+
+# take bootstrap samples
+repetitions <- 10000
+bootstrap_samples <- rep(NA, repetitions)
+for (i in 1:repetitions) {
+  sample <- rec_prob %>% sample_n(nrow(rec_prob), replace = TRUE)
+  bootstrap_samples[i] <- sample %>% summarize(mean(is_click)) %>% as.numeric()
+}
+
+# create tibble
+bootstrap_distribution <- tibble(proportion = bootstrap_samples)
+
+# prepare to take confidence interval
+confidence <- 0.95
+first_quantile <- (1 - confidence) / 2
+last_quantile <- 1 - first_quantile
+```
+
+Visualize confidence interval
+```{r, echo=FALSE}
+# show the confidence interval
+bootstrap_distribution %>% summarize(lower_bound = quantile(proportion, first_quantile),
+upper_bound = quantile(proportion, last_quantile))
+
+# show histogram with confidence interval bars
+```
